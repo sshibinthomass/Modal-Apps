@@ -4,7 +4,7 @@ from modal import Volume, Image
 
 # Setup - define our infrastructure with code!
 
-app = modal.App("flux-1-schnell")
+app = modal.App("flux-schnell")
 image = Image.debian_slim().pip_install(
     "huggingface", "torch", "torchvision", "transformers", "diffusers", "accelerate", "sentencepiece", "protobuf"
 )
@@ -13,7 +13,7 @@ image = Image.debian_slim().pip_install(
 # Depending on your Modal configuration, you may need to replace "huggingface-secret" with "huggingface" or "hf-secret"
 secrets = [modal.Secret.from_name("huggingface-secret")]
 
-GPU = "L4"
+GPU = "A100-80GB"
 MODEL_NAME = "black-forest-labs/FLUX.1-schnell"
 CACHE_DIR = "/cache"
 
@@ -37,24 +37,14 @@ class FluxModel:
     @modal.enter()
     def setup(self):
         import torch
-        from diffusers import FluxTransformer2DModel, FluxPipeline
+        from diffusers import FluxPipeline
 
-        # Load the main 12B transformer in native FP8 (float8_e4m3fn) to save memory
-        transformer = FluxTransformer2DModel.from_pretrained(
-            MODEL_NAME,
-            subfolder="transformer",
-            torch_dtype=torch.float8_e4m3fn
-        )
-        
-        # Load the rest of the pipeline in bfloat16
+        # Load the pipeline in bfloat16 for optimal memory/speed on A100-80GB
         self.pipe = FluxPipeline.from_pretrained(
             MODEL_NAME,
-            transformer=transformer,
             torch_dtype=torch.bfloat16
         )
-        
-        # Enable model CPU offloading to guarantee no peak memory spikes during generation
-        self.pipe.enable_model_cpu_offload()
+        self.pipe.to("cuda")
 
     @modal.method()
     def generate(self, prompt: str, num_inference_steps: int = 4, guidance_scale: float = 0.0) -> bytes:
