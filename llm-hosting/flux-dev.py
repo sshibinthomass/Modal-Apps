@@ -14,7 +14,7 @@ image = Image.debian_slim().pip_install(
 secrets = [modal.Secret.from_name("huggingface-secret")]
 
 GPU = "A100-80GB"
-MODEL_NAME = "black-forest-labs/FLUX.2-dev"
+MODEL_NAME = "black-forest-labs/FLUX.1-dev"
 CACHE_DIR = "/cache"
 
 # Change this to 1 if you want Modal to be always running, otherwise it will go cold after 2 mins
@@ -37,18 +37,18 @@ class FluxModel:
     @modal.enter()
     def setup(self):
         import torch
-        from diffusers import Flux2Pipeline
+        from diffusers import FluxPipeline
 
         # Load the pipeline in bfloat16 for optimal memory/speed on A100-80GB
-        self.pipe = Flux2Pipeline.from_pretrained(
+        self.pipe = FluxPipeline.from_pretrained(
             MODEL_NAME,
-            torch_dtype=torch.bfloat16,
-            device_map="balanced"
+            torch_dtype=torch.bfloat16
         )
+        self.pipe.to("cuda")
 
     @modal.method()
     def generate(self, prompt: str, num_inference_steps: int = 28, guidance_scale: float = 3.5) -> bytes:
-        # Run FLUX.2-dev inference
+        # Run FLUX.1-dev inference
         image = self.pipe(
             prompt=prompt,
             num_inference_steps=num_inference_steps,
