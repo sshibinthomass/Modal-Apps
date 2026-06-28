@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 import modal
 from modal import Volume, Image
 
@@ -5,8 +6,13 @@ from modal import Volume, Image
 
 app = modal.App("llama-3-2-3b-instruct")
 image = Image.debian_slim().pip_install(
-    "huggingface", "torch", "transformers", "bitsandbytes", "accelerate"
+    "huggingface", "torch", "transformers", "bitsandbytes", "accelerate", "pydantic", "fastapi[standard]"
 )
+
+class GenerateRequest(BaseModel):
+    prompt: str
+    max_new_tokens: int = 128
+
 
 # This collects the secret from Modal.
 # Depending on your Modal configuration, you may need to replace "huggingface-secret" with "huggingface" or "hf-secret"
@@ -85,6 +91,11 @@ class LlamaModel:
         # Decode only the generated response (excluding the prompt)
         generated_tokens = outputs[0][inputs.shape[-1]:]
         return self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
+    def generate_api(self, request: GenerateRequest) -> str:
+        return self.generate.local(request.prompt, max_new_tokens=request.max_new_tokens)
+
 
 
 @app.local_entrypoint()
