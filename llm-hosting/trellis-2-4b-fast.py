@@ -2,9 +2,12 @@ import io
 import os
 import tempfile
 import time
+from pydantic import BaseModel
+from fastapi import Response
 
 import modal
 from modal import Image, Volume
+
 
 
 app = modal.App("trellis-2-4b-fast")
@@ -71,6 +74,8 @@ image = (
         "trimesh",
         "wheel",
         "zstandard",
+        "pydantic",
+        "fastapi[standard]",
     )
     .pip_install(
         "git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8"
@@ -144,6 +149,18 @@ def assert_huggingface_access() -> None:
                 "accept access with the account that owns HF_TOKEN, then recreate "
                 "the Modal secret with that token."
             ) from exc
+
+
+class GenerateRequest(BaseModel):
+    image_base64: str
+    seed: int = 42
+    pipeline_type: str = "512"
+    decimation_target: int = 300_000
+    texture_size: int = 1024
+    remesh: bool = False
+    webp: bool = False
+    use_bf16: bool = False
+
 
 
 @app.cls(
@@ -242,6 +259,23 @@ class Trellis2FastModel:
         finally:
             if os.path.exists(output_path):
                 os.remove(output_path)
+
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
+    def generate_api(self, request: GenerateRequest) -> Response:
+        import base64
+        image_bytes = base64.b64decode(request.image_base64)
+        glb_bytes = self.generate.local(
+            image_bytes=image_bytes,
+            seed=request.seed,
+            pipeline_type=request.pipeline_type,
+            decimation_target=request.decimation_target,
+            texture_size=request.texture_size,
+            remesh=request.remesh,
+            webp=request.webp,
+            use_bf16=request.use_bf16
+        )
+        return Response(content=glb_bytes, media_type="model/gltf-binary")
+
 
 
 @app.local_entrypoint()
