@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+from typing import Union, List, Dict, Any
 import modal
 from modal import Image, Volume
 
@@ -5,8 +7,17 @@ from modal import Image, Volume
 
 app = modal.App("gemma-4-12b-it")
 image = Image.debian_slim().pip_install(
-    "huggingface", "torch", "torchvision", "transformers", "accelerate", "librosa"
+    "huggingface", "torch", "torchvision", "transformers", "accelerate", "librosa", "pydantic", "fastapi[standard]"
 )
+
+class GenerateRequest(BaseModel):
+    prompt: Union[str, List[Dict[str, Any]]]
+    max_new_tokens: int = 256
+    temperature: float = 1.0
+    top_p: float = 0.95
+    top_k: int = 64
+    enable_thinking: bool = False
+
 
 # This collects the secret from Modal.
 # Depending on your Modal configuration, you may need to replace "huggingface-secret" with "huggingface" or "hf-secret"
@@ -92,6 +103,18 @@ class GemmaModel:
         if isinstance(parsed, dict):
             return parsed.get("answer") or parsed.get("content") or str(parsed)
         return str(parsed)
+
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
+    def generate_api(self, request: GenerateRequest) -> str:
+        return self.generate.local(
+            prompt=request.prompt,
+            max_new_tokens=request.max_new_tokens,
+            temperature=request.temperature,
+            top_p=request.top_p,
+            top_k=request.top_k,
+            enable_thinking=request.enable_thinking
+        )
+
 
 
 @app.local_entrypoint()

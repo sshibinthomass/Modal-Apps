@@ -1,13 +1,21 @@
 import io
 import modal
 from modal import Volume, Image
+from pydantic import BaseModel
+from fastapi import Response
 
 # Setup - define our infrastructure with code!
 
 app = modal.App("flux-dev-2")
 image = Image.debian_slim().pip_install(
-    "huggingface", "torch", "torchvision", "transformers", "diffusers", "accelerate", "sentencepiece", "protobuf"
+    "huggingface", "torch", "torchvision", "transformers", "diffusers", "accelerate", "sentencepiece", "protobuf", "pydantic", "fastapi[standard]"
 )
+
+class GenerateRequest(BaseModel):
+    prompt: str
+    num_inference_steps: int = 28
+    guidance_scale: float = 3.5
+
 
 # This collects the secret from Modal.
 # Depending on your Modal configuration, you may need to replace "huggingface-secret" with "huggingface" or "hf-secret"
@@ -60,6 +68,16 @@ class FluxModel:
         buffer = io.BytesIO()
         image.save(buffer, format="PNG")
         return buffer.getvalue()
+
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
+    def generate_api(self, request: GenerateRequest) -> Response:
+        img_bytes = self.generate.local(
+            prompt=request.prompt,
+            num_inference_steps=request.num_inference_steps,
+            guidance_scale=request.guidance_scale
+        )
+        return Response(content=img_bytes, media_type="image/png")
+
 
 
 @app.local_entrypoint()
