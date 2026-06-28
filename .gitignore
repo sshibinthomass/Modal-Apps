@@ -13,3 +13,6 @@ week8/
 
 # Secrets
 .env
+
+# 3D models
+*.glb
