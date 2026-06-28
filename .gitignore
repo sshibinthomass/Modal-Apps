@@ -16,3 +16,9 @@ week8/
 
 # 3D models
 *.glb
+
+# TypeScript / Node.js
+llm-inference-typescript/node_modules/
+llm-inference-typescript/dist/
+llm-inference-typescript/outputs/
+llm-inference-typescript/package-lock.json

@@ -1,0 +1,24 @@
+{
+  "name": "llm-inference-typescript",
+  "version": "1.0.0",
+  "description": "TypeScript inference client for Gemma-4-12b-it on Modal",
+  "main": "dist/inf-gemma-4-12b-it.js",
+  "scripts": {
+    "start": "tsx src/inf-gemma-4-12b-it.ts",
+    "start-gemma": "tsx src/inf-gemma-4-12b-it.ts",
+    "start-llama": "tsx src/inf-llama-3-2-3b-instruct.ts",
+    "start-flux-dev": "tsx src/inf-flux-dev.ts",
+    "start-flux-schnell": "tsx src/inf-flux-schnell.ts",
+    "start-trellis": "tsx src/inf-trellis-2-4b.ts",
+    "start-trellis-fast": "tsx src/inf-trellis-2-4b-fast.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
