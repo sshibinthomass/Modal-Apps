@@ -12,6 +12,7 @@
     "start-trellis": "tsx src/inf-trellis-2-4b.ts",
     "start-trellis-fast": "tsx src/inf-trellis-2-4b-fast.ts",
     "start-rmbg": "tsx src/inf-rmbg-2-0.ts",
+    "start-image-to-3d": "tsx src/inf-image-to-3d.ts",
     "build": "tsc"
   },
   "dependencies": {
