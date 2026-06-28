@@ -58,9 +58,9 @@ async function main() {
   console.log(`Target Endpoint URL: ${ENDPOINT_URL}\n`);
   try {
     // Dynamically locate img.png relative to running directory
-    let imgPath = path.join(process.cwd(), "../llm-inference/img.png");
+    let imgPath = path.join(process.cwd(), "../llm-inference/img6.png");
     if (!fs.existsSync(imgPath)) {
-      imgPath = path.join(process.cwd(), "llm-inference/img.png");
+      imgPath = path.join(process.cwd(), "llm-inference/img6.png");
     }
 
     if (!fs.existsSync(imgPath)) {
