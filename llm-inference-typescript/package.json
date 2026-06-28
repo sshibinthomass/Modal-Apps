@@ -11,6 +11,7 @@
     "start-flux-schnell": "tsx src/inf-flux-schnell.ts",
     "start-trellis": "tsx src/inf-trellis-2-4b.ts",
     "start-trellis-fast": "tsx src/inf-trellis-2-4b-fast.ts",
+    "start-rmbg": "tsx src/inf-rmbg-2-0.ts",
     "build": "tsc"
   },
   "dependencies": {
