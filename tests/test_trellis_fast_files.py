@@ -47,6 +47,15 @@ class TrellisFastFilesTest(unittest.TestCase):
         self.assertIn("torch.inference_mode()", source)
         self.assertNotIn("verbose=True", source)
 
+    def test_host_exposes_async_start_and_result_endpoints(self):
+        source = read_file(HOST_FILE)
+
+        self.assertIn("def start_api(self, request: GenerateRequest) -> JSONResponse:", source)
+        self.assertIn("def result_api(self, call_id: str):", source)
+        self.assertIn("self.generate.spawn(", source)
+        self.assertIn("modal.FunctionCall.from_id(call_id)", source)
+        self.assertIn('JSONResponse({"status": "running"}, status_code=202)', source)
+
     def test_inference_client_targets_fast_app_with_fast_defaults(self):
         source = read_file(INFERENCE_FILE)
         tree = module_tree(INFERENCE_FILE)

@@ -4,6 +4,7 @@ import tempfile
 import time
 from pydantic import BaseModel
 from fastapi import Response
+from fastapi.responses import JSONResponse
 
 import modal
 from modal import Image, Volume
@@ -274,6 +275,31 @@ class Trellis2FastModel:
             webp=request.webp,
             use_bf16=request.use_bf16
         )
+        return Response(content=glb_bytes, media_type="model/gltf-binary")
+
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
+    def start_api(self, request: GenerateRequest) -> JSONResponse:
+        import base64
+        image_bytes = base64.b64decode(request.image_base64)
+        call = self.generate.spawn(
+            image_bytes=image_bytes,
+            seed=request.seed,
+            pipeline_type=request.pipeline_type,
+            decimation_target=request.decimation_target,
+            texture_size=request.texture_size,
+            remesh=request.remesh,
+            webp=request.webp,
+            use_bf16=request.use_bf16
+        )
+        return JSONResponse({"call_id": call.object_id})
+
+    @modal.fastapi_endpoint(method="GET", requires_proxy_auth=True)
+    def result_api(self, call_id: str):
+        call = modal.FunctionCall.from_id(call_id)
+        try:
+            glb_bytes = call.get(timeout=0)
+        except TimeoutError:
+            return JSONResponse({"status": "running"}, status_code=202)
         return Response(content=glb_bytes, media_type="model/gltf-binary")
 
 
